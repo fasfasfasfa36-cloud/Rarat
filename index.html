@@ -8,7 +8,7 @@
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
@@ -20,65 +20,60 @@
             touch-action: manipulation;
         }
         h1 {
-            font-size: 32px;
-            margin: 10px 0;
+            font-size: 28px;
+            margin: 5px 0;
             text-align: center;
             background: linear-gradient(90deg, #0088cc, #ff4d4d);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         #category {
-            font-size: 18px;
+            font-size: 16px;
             color: var(--tg-theme-hint-color, #999);
+            margin: 5px 0;
+        }
+        #hangman {
+            width: 200px;
+            height: 200px;
+            margin: 10px 0;
+        }
+        #word {
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 10px;
             margin: 10px 0;
             text-align: center;
         }
-        #hangman {
-            width: 240px;
-            height: 240px;
-            margin: 20px 0;
-            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.3));
-        }
-        #word {
-            font-size: 42px;
-            font-weight: bold;
-            letter-spacing: 14px;
-            margin: 20px 0;
-            text-align: center;
-        }
         #lives {
-            font-size: 32px;
-            margin: 15px 0;
+            font-size: 28px;
+            margin: 10px 0;
         }
         #status {
-            font-size: 24px;
-            margin: 20px 0;
+            font-size: 20px;
+            margin: 10px 0;
             font-weight: bold;
             text-align: center;
-            min-height: 34px;
+            min-height: 28px;
         }
         #keyboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
+            gap: 8px;
             width: 100%;
-            max-width: 500px;
-            margin: 30px 0;
-            padding: 10px;
-            box-sizing: border-box;
-            animation: fadeIn 0.8s ease-in;
+            max-width: 460px;
+            margin: 15px 0;
         }
         .key {
             background: var(--tg-theme-button-color, #0088cc);
             color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
-            padding: 18px;
-            border-radius: 18px;
-            font-size: 24px;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 20px;
             font-weight: bold;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: all 0.2s;
-            min-height: 60px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -88,18 +83,18 @@
         }
         .key.correct {
             background: #4CAF50 !important;
-            animation: pulse 0.6s;
+            animation: pulse 0.5s;
         }
         .key.wrong {
             background: #f44336 !important;
-            animation: shake 0.6s;
+            animation: shake 0.5s;
         }
         #scores {
-            font-size: 20px;
-            margin: 20px 0;
-            padding: 14px 28px;
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px 20px;
             background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border-radius: 18px;
+            border-radius: 14px;
             text-align: center;
             width: 90%;
         }
@@ -107,29 +102,27 @@
             background: var(--tg-theme-button-color, #0088cc);
             color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
-            padding: 20px 40px;
-            border-radius: 24px;
-            font-size: 24px;
+            padding: 16px 32px;
+            border-radius: 18px;
+            font-size: 20px;
             font-weight: bold;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            margin: 30px 0;
-            transition: all 0.3s;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+            margin: 15px 0;
         }
         button:active {
             transform: scale(0.95);
         }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
-        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
     </style>
 </head>
 <body>
     <h1>Угадай слово! 🎯</h1>
     <div id="category"></div>
-    <canvas id="hangman" width="240" height="240"></canvas>
+    <canvas id="hangman" width="200" height="200"></canvas>
     <div id="word"></div>
     <div id="lives">❤️❤️❤️❤️❤️❤️</div>
-    <div id="status">Выбери букву ниже 👇</div>
+    <div id="status">Выбери букву 👇</div>
     <div id="keyboard"></div>
     <div id="scores">🏆 Победы: 0 | 💔 Поражения: 0 | 🔥 Серия: 0 (рекорд: 0)</div>
     <button id="newGame">🔄 Новая игра</button>
@@ -163,33 +156,33 @@
         let currentWordObj = null;
         let guessedLetters = new Set();
         let lives = 6;
-        let scores = JSON.parse(localStorage.getItem('hangman_final')) || { wins: 0, losses: 0, bestStreak: 0 };
+        let scores = JSON.parse(localStorage.getItem('hangman_mobile')) || { wins: 0, losses: 0, bestStreak: 0 };
         let currentStreak = 0;
 
         const russianLetters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
 
         function updateScores() {
             scoresDiv.textContent = `🏆 Победы: ${scores.wins} | 💔 Поражения: ${scores.losses} | 🔥 Серия: ${currentStreak} (рекорд: ${scores.bestStreak})`;
-            localStorage.setItem('hangman_final', JSON.stringify(scores));
+            localStorage.setItem('hangman_mobile', JSON.stringify(scores));
         }
 
         function drawHangman() {
-            ctx.clearRect(0, 0, 240, 240);
+            ctx.clearRect(0, 0, 200, 200);
             ctx.strokeStyle = 'var(--tg-theme-text-color, #000)';
-            ctx.lineWidth = 8;
+            ctx.lineWidth = 7;
             ctx.lineCap = 'round';
 
             ctx.beginPath();
-            ctx.moveTo(20, 220); ctx.lineTo(220, 220); ctx.lineTo(200, 200); ctx.lineTo(40, 200); ctx.lineTo(20, 220);
-            ctx.moveTo(70, 200); ctx.lineTo(70, 20); ctx.lineTo(180, 20); ctx.lineTo(180, 60);
+            ctx.moveTo(20, 180); ctx.lineTo(180, 180); ctx.lineTo(160, 160); ctx.lineTo(40, 160); ctx.lineTo(20, 180);
+            ctx.moveTo(60, 160); ctx.lineTo(60, 20); ctx.lineTo(140, 20); ctx.lineTo(140, 50);
             ctx.stroke();
 
-            if (lives < 6) { ctx.beginPath(); ctx.arc(180, 80, 20, 0, Math.PI*2); ctx.stroke(); }
-            if (lives < 5) { ctx.beginPath(); ctx.moveTo(180, 100); ctx.lineTo(180, 150); ctx.stroke(); }
-            if (lives < 4) { ctx.beginPath(); ctx.moveTo(180, 110); ctx.lineTo(150, 130); ctx.stroke(); }
-            if (lives < 3) { ctx.beginPath(); ctx.moveTo(180, 110); ctx.lineTo(210, 130); ctx.stroke(); }
-            if (lives < 2) { ctx.beginPath(); ctx.moveTo(180, 150); ctx.lineTo(150, 190); ctx.stroke(); }
-            if (lives < 1) { ctx.beginPath(); ctx.moveTo(180, 150); ctx.lineTo(210, 190); ctx.stroke(); }
+            if (lives < 6) { ctx.beginPath(); ctx.arc(140, 70, 18, 0, Math.PI*2); ctx.stroke(); }
+            if (lives < 5) { ctx.beginPath(); ctx.moveTo(140, 88); ctx.lineTo(140, 130); ctx.stroke(); }
+            if (lives < 4) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(110, 115); ctx.stroke(); }
+            if (lives < 3) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(170, 115); ctx.stroke(); }
+            if (lives < 2) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(120, 160); ctx.stroke(); }
+            if (lives < 1) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(160, 160); ctx.stroke(); }
         }
 
         function updateWordDisplay() {
@@ -223,7 +216,7 @@
                 buttons[idx].classList.add('correct');
                 updateWordDisplay();
                 if (currentWordObj.word.split('').every(l => guessedLetters.has(l))) {
-                    statusDiv.textContent = '🎉 Победа! Ты крут!';
+                    statusDiv.textContent = '🎉 Победа!';
                     scores.wins++;
                     currentStreak++;
                     if (currentStreak > scores.bestStreak) scores.bestStreak = currentStreak;
@@ -235,12 +228,12 @@
                 updateLives();
                 drawHangman();
                 if (lives === 0) {
-                    statusDiv.textContent = `😭 Проиграл! Слово было: ${currentWordObj.word}`;
+                    statusDiv.textContent = `😭 Проиграл! Слово: ${currentWordObj.word}`;
                     scores.losses++;
                     currentStreak = 0;
                     updateScores();
                 } else {
-                    statusDiv.textContent = `❌ Неверно! Осталось ${lives} ❤️`;
+                    statusDiv.textContent = `❌ Неверно! Осталось ${lives}`;
                 }
             }
         }
@@ -250,7 +243,7 @@
             categoryDiv.textContent = `Категория: ${currentWordObj.cat}`;
             guessedLetters = new Set();
             lives = 6;
-            statusDiv.textContent = 'Выбери букву ниже 👇';
+            statusDiv.textContent = 'Выбери букву 👇';
             wordDiv.textContent = '_ '.repeat(currentWordObj.word.length).trim();
             updateLives();
             drawHangman();
