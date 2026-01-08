@@ -8,7 +8,7 @@
     <style>
         body {
             margin: 0;
-            padding: 20px 10px;
+            padding: 20px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
@@ -21,7 +21,7 @@
         }
         h1 {
             font-size: 32px;
-            margin: 0 0 10px;
+            margin: 10px 0;
             text-align: center;
             background: linear-gradient(90deg, #0088cc, #ff4d4d);
             -webkit-background-clip: text;
@@ -30,59 +30,61 @@
         #category {
             font-size: 18px;
             color: var(--tg-theme-hint-color, #999);
-            margin-bottom: 10px;
+            margin: 10px 0;
+            text-align: center;
         }
         #hangman {
             width: 240px;
             height: 240px;
             margin: 20px 0;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.3));
         }
         #word {
             font-size: 42px;
             font-weight: bold;
-            letter-spacing: 12px;
+            letter-spacing: 14px;
             margin: 20px 0;
-            min-height: 60px;
             text-align: center;
         }
         #lives {
-            font-size: 30px;
+            font-size: 32px;
             margin: 15px 0;
         }
         #status {
             font-size: 24px;
-            margin: 15px 0;
+            margin: 20px 0;
             font-weight: bold;
-            min-height: 34px;
             text-align: center;
+            min-height: 34px;
         }
         #keyboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
-            gap: 10px;
-            max-width: 500px;
+            grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+            gap: 12px;
             width: 100%;
-            margin: 20px 0;
-            padding: 0 10px;
+            max-width: 500px;
+            margin: 30px 0;
+            padding: 10px;
             box-sizing: border-box;
+            animation: fadeIn 0.8s ease-in;
         }
         .key {
             background: var(--tg-theme-button-color, #0088cc);
             color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
-            padding: 16px;
-            border-radius: 16px;
-            font-size: 22px;
+            padding: 18px;
+            border-radius: 18px;
+            font-size: 24px;
             font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
             transition: all 0.2s;
-            touch-action: manipulation;
-            min-height: 50px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .key:active {
-            transform: scale(0.95);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transform: scale(0.92);
         }
         .key.correct {
             background: #4CAF50 !important;
@@ -95,29 +97,30 @@
         #scores {
             font-size: 20px;
             margin: 20px 0;
-            padding: 12px 24px;
+            padding: 14px 28px;
             background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border-radius: 16px;
+            border-radius: 18px;
             text-align: center;
+            width: 90%;
         }
         button {
             background: var(--tg-theme-button-color, #0088cc);
             color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
-            padding: 18px 36px;
-            border-radius: 20px;
-            font-size: 22px;
+            padding: 20px 40px;
+            border-radius: 24px;
+            font-size: 24px;
             font-weight: bold;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
-            margin: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            margin: 30px 0;
             transition: all 0.3s;
-            touch-action: manipulation;
         }
         button:active {
             transform: scale(0.95);
         }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
-        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-12px); } 75% { transform: translateX(12px); } }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -160,14 +163,14 @@
         let currentWordObj = null;
         let guessedLetters = new Set();
         let lives = 6;
-        let scores = JSON.parse(localStorage.getItem('hangman_scores_v4')) || { wins: 0, losses: 0, bestStreak: 0 };
+        let scores = JSON.parse(localStorage.getItem('hangman_final')) || { wins: 0, losses: 0, bestStreak: 0 };
         let currentStreak = 0;
 
         const russianLetters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
 
         function updateScores() {
             scoresDiv.textContent = `🏆 Победы: ${scores.wins} | 💔 Поражения: ${scores.losses} | 🔥 Серия: ${currentStreak} (рекорд: ${scores.bestStreak})`;
-            localStorage.setItem('hangman_scores_v4', JSON.stringify(scores));
+            localStorage.setItem('hangman_final', JSON.stringify(scores));
         }
 
         function drawHangman() {
@@ -215,13 +218,12 @@
             const buttons = keyboardDiv.querySelectorAll('.key');
             const idx = russianLetters.indexOf(letter);
             buttons[idx].disabled = true;
-            buttons[idx].style.opacity = '0.6';
 
             if (currentWordObj.word.includes(letter)) {
                 buttons[idx].classList.add('correct');
                 updateWordDisplay();
                 if (currentWordObj.word.split('').every(l => guessedLetters.has(l))) {
-                    statusDiv.textContent = '🎉 Победа! Круто!';
+                    statusDiv.textContent = '🎉 Победа! Ты крут!';
                     scores.wins++;
                     currentStreak++;
                     if (currentStreak > scores.bestStreak) scores.bestStreak = currentStreak;
@@ -233,7 +235,7 @@
                 updateLives();
                 drawHangman();
                 if (lives === 0) {
-                    statusDiv.textContent = `😭 Проиграл! Слово: ${currentWordObj.word}`;
+                    statusDiv.textContent = `😭 Проиграл! Слово было: ${currentWordObj.word}`;
                     scores.losses++;
                     currentStreak = 0;
                     updateScores();
@@ -258,7 +260,7 @@
 
         newGameBtn.onclick = newGame;
         updateScores();
-        newGame(); // Главное — автозапуск игры!
+        newGame();
     </script>
 </body>
 </html>
