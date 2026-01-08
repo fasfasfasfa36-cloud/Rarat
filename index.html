@@ -132,7 +132,6 @@
     <button id="newGame">🔄 Новая игра</button>
 
     <script>
-        // Безопасная инициализация Telegram WebApp (работает даже вне Telegram для теста)
         let WebApp = window.Telegram?.WebApp;
         if (WebApp) {
             WebApp.ready();
@@ -161,23 +160,22 @@
         let currentWordObj = null;
         let guessedLetters = new Set();
         let lives = 6;
-        let scores = JSON.parse(localStorage.getItem('hangman_scores_v3')) || { wins: 0, losses: 0, bestStreak: 0 };
+        let scores = JSON.parse(localStorage.getItem('hangman_scores_v4')) || { wins: 0, losses: 0, bestStreak: 0 };
         let currentStreak = 0;
 
         const russianLetters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
 
         function updateScores() {
             scoresDiv.textContent = `🏆 Победы: ${scores.wins} | 💔 Поражения: ${scores.losses} | 🔥 Серия: ${currentStreak} (рекорд: ${scores.bestStreak})`;
-            localStorage.setItem('hangman_scores_v3', JSON.stringify(scores));
+            localStorage.setItem('hangman_scores_v4', JSON.stringify(scores));
         }
 
         function drawHangman() {
             ctx.clearRect(0, 0, 240, 240);
-            ctx.strokeStyle = var(--tg-theme-text-color, '#000');
+            ctx.strokeStyle = 'var(--tg-theme-text-color, #000)';
             ctx.lineWidth = 8;
             ctx.lineCap = 'round';
 
-            // Основание и виселица
             ctx.beginPath();
             ctx.moveTo(20, 220); ctx.lineTo(220, 220); ctx.lineTo(200, 200); ctx.lineTo(40, 200); ctx.lineTo(20, 220);
             ctx.moveTo(70, 200); ctx.lineTo(70, 20); ctx.lineTo(180, 20); ctx.lineTo(180, 60);
@@ -205,18 +203,19 @@
                 const btn = document.createElement('button');
                 btn.classList.add('key');
                 btn.textContent = letter;
-                btn.addEventListener('click', () => guessLetter(letter));
-                btn.addEventListener('touchstart', (e) => { e.preventDefault(); guessLetter(letter); }); // Для лучшего тача на мобиле
+                btn.onclick = () => guessLetter(letter);
                 keyboardDiv.appendChild(btn);
             });
         }
 
         function guessLetter(letter) {
             if (guessedLetters.has(letter) || lives === 0 || currentWordObj.word.split('').every(l => guessedLetters.has(l))) return;
+
             guessedLetters.add(letter);
             const buttons = keyboardDiv.querySelectorAll('.key');
             const idx = russianLetters.indexOf(letter);
             buttons[idx].disabled = true;
+            buttons[idx].style.opacity = '0.6';
 
             if (currentWordObj.word.includes(letter)) {
                 buttons[idx].classList.add('correct');
@@ -250,16 +249,16 @@
             guessedLetters = new Set();
             lives = 6;
             statusDiv.textContent = 'Выбери букву ниже 👇';
-            updateWordDisplay();
+            wordDiv.textContent = '_ '.repeat(currentWordObj.word.length).trim();
             updateLives();
             drawHangman();
             createKeyboard();
             updateScores();
         }
 
-        newGameBtn.addEventListener('click', newGame);
+        newGameBtn.onclick = newGame;
         updateScores();
-        newGame(); // Автозапуск всегда
+        newGame(); // Главное — автозапуск игры!
     </script>
 </body>
 </html>
