@@ -3,170 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Угадай слово! 🎯</title>
+    <title>Виселица: 1 vs 1 🎯</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 10px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-            touch-action: manipulation;
-        }
-        h1 {
-            font-size: 28px;
-            margin: 5px 0;
-            text-align: center;
-            background: linear-gradient(90deg, #0088cc, #ff4d4d);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        #category {
-            font-size: 16px;
-            color: var(--tg-theme-hint-color, #999);
-            margin: 5px 0;
-        }
-        #hangman {
-            width: 200px;
-            height: 200px;
-            margin: 10px 0;
-        }
-        #word {
-            font-size: 36px;
-            font-weight: bold;
-            letter-spacing: 10px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        #lives {
-            font-size: 28px;
-            margin: 10px 0;
-        }
-        #status {
-            font-size: 20px;
-            margin: 10px 0;
-            font-weight: bold;
-            text-align: center;
-            min-height: 28px;
-        }
-        #keyboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(36px, 1fr));
-            gap: 8px;
-            width: 100%;
-            max-width: 460px;
-            margin: 15px 0;
-        }
-        .key {
-            background: var(--tg-theme-button-color, #0088cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 20px;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: all 0.2s;
-            min-height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .key:active {
-            transform: scale(0.92);
-        }
-        .key.correct {
-            background: #4CAF50 !important;
-            animation: pulse 0.5s;
-        }
-        .key.wrong {
-            background: #f44336 !important;
-            animation: shake 0.5s;
-        }
-        #scores {
-            font-size: 18px;
-            margin: 10px 0;
-            padding: 10px 20px;
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border-radius: 14px;
-            text-align: center;
-            width: 90%;
-        }
-        button {
-            background: var(--tg-theme-button-color, #0088cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 16px 32px;
-            border-radius: 18px;
-            font-size: 20px;
-            font-weight: bold;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.3);
-            margin: 15px 0;
-        }
-        button:active {
-            transform: scale(0.95);
-        }
+        body { margin: 0; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; touch-action: manipulation; }
+        h1 { font-size: 28px; margin: 5px 0; text-align: center; background: linear-gradient(90deg, #0088cc, #ff4d4d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #menu, #game { width: 100%; max-width: 500px; text-align: center; }
+        input, button { width: 90%; padding: 14px; margin: 10px 0; border-radius: 14px; font-size: 18px; border: none; }
+        input { background: var(--tg-theme-secondary-bg-color, #f0f0f0); color: var(--tg-theme-text-color); }
+        button { background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #ffffff); font-weight: bold; }
+        button:active { opacity: 0.8; }
+        #roomCodeDisplay { font-size: 20px; font-weight: bold; margin: 15px 0; }
+        #word { font-size: 36px; letter-spacing: 10px; margin: 15px 0; text-align: center; }
+        #lives { font-size: 28px; margin: 10px 0; }
+        #status { font-size: 20px; margin: 10px 0; font-weight: bold; text-align: center; min-height: 28px; }
+        #keyboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(36px, 1fr)); gap: 8px; margin: 15px 0; width: 100%; max-width: 460px; }
+        .key { padding: 14px; font-size: 20px; border-radius: 14px; background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #ffffff); font-weight: bold; }
+        .key:disabled { opacity: 0.5; background: var(--tg-theme-hint-color, #999); }
+        .key.correct { background: #4CAF50 !important; animation: pulse 0.5s; }
+        .key.wrong { background: #f44336 !important; animation: shake 0.5s; }
+        #hangman { width: 200px; height: 200px; margin: 10px 0; }
+        #error { color: red; margin: 10px 0; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
     </style>
 </head>
 <body>
-    <h1>Угадай слово! 🎯</h1>
-    <div id="category"></div>
-    <canvas id="hangman" width="200" height="200"></canvas>
-    <div id="word"></div>
-    <div id="lives">❤️❤️❤️❤️❤️❤️</div>
-    <div id="status">Выбери букву 👇</div>
-    <div id="keyboard"></div>
-    <div id="scores">🏆 Победы: 0 | 💔 Поражения: 0 | 🔥 Серия: 0 (рекорд: 0)</div>
-    <button id="newGame">🔄 Новая игра</button>
+    <h1>Виселица: 1 vs 1 🎯</h1>
+
+    <div id="menu">
+        <button id="createRoom">Создать комнату</button>
+        <p style="margin:10px 0;">или</p>
+        <input id="codeInput" placeholder="Введи код комнаты (например ABCD)">
+        <button id="joinRoom">Присоединиться</button>
+        <p id="error"></p>
+    </div>
+
+    <div id="game" style="display:none;">
+        <div id="roomCodeDisplay"></div>
+        <div id="waitingWord" style="font-size:18px; margin:20px 0;">Ожидаем, пока соперник загадает слово...</div>
+
+        <div id="inputWordSection" style="display:none;">
+            <input id="wordInput" placeholder="Введи слово (только русские буквы)">
+            <button id="submitWord">Загадать слово!</button>
+        </div>
+
+        <canvas id="hangman" width="200" height="200"></canvas>
+        <div id="word"></div>
+        <div id="lives">❤️❤️❤️❤️❤️❤️</div>
+        <div id="status">Твой ход!</div>
+        <div id="keyboard"></div>
+        <button id="newRound" style="display:none;">🔄 Новая игра (поменяться ролями)</button>
+    </div>
 
     <script>
         let WebApp = window.Telegram?.WebApp;
-        if (WebApp) {
-            WebApp.ready();
-            WebApp.expand();
+        if (WebApp) { WebApp.ready(); WebApp.expand(); }
+
+        // Твой сервер Zeabur
+        const socket = io('https://hangman-server.zeabur.app');
+
+        const menu = document.getElementById('menu');
+        const game = document.getElementById('game');
+        const error = document.getElementById('error');
+        let roomCode = null;
+        let isCreator = false;
+
+        document.getElementById('createRoom').onclick = () => socket.emit('createRoom');
+
+        document.getElementById('joinRoom').onclick = () => {
+            const code = document.getElementById('codeInput').value.trim().toUpperCase();
+            if (code) socket.emit('joinRoom', code);
+            else error.textContent = 'Введи код!';
+        };
+
+        socket.on('roomCreated', (code) => {
+            roomCode = code;
+            isCreator = true;
+            menu.style.display = 'none';
+            game.style.display = 'block';
+            document.getElementById('roomCodeDisplay').textContent = `Код комнаты: ${code}\nОтправь другу!`;
+            document.getElementById('inputWordSection').style.display = 'block';
+            error.textContent = '';
+
+            // Кнопка поделиться в Telegram
+            if (WebApp) {
+                WebApp.MainButton.setText('Поделиться кодом').show().onClick(() => {
+                    WebApp.shareUrl(window.location.origin + window.location.pathname + '?room=' + code, `Присоединяйся к виселице! Код: ${code}`);
+                });
+            }
+        });
+
+        socket.on('roomJoined', (code) => {
+            roomCode = code;
+            isCreator = false;
+            menu.style.display = 'none';
+            game.style.display = 'block';
+            document.getElementById('roomCodeDisplay').textContent = `Ты в комнате: ${code}`;
+            document.getElementById('waitingWord').style.display = 'block';
+            error.textContent = '';
+        });
+
+        document.getElementById('submitWord').onclick = () => {
+            const word = document.getElementById('wordInput').value.trim().toUpperCase();
+            if (word && /^[А-ЯЁ]+$/.test(word)) {
+                socket.emit('setWord', { code: roomCode, word });
+                document.getElementById('inputWordSection').style.display = 'none';
+                document.getElementById('waitingWord').textContent = 'Соперник угадывает...';
+                error.textContent = '';
+            } else {
+                error.textContent = 'Только русские буквы, без пробелов!';
+            }
+        };
+
+        socket.on('gameStarted', ({ wordLength }) => {
+            document.getElementById('waitingWord').style.display = 'none';
+            document.getElementById('word').textContent = '_ '.repeat(wordLength).trim();
+            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает...' : 'Твой ход!';
+            createKeyboard();
+            drawHangman(6);
+        });
+
+        socket.on('updateGame', ({ revealed, lives }) => {
+            document.getElementById('word').textContent = revealed;
+            document.getElementById('lives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(6 - lives);
+            drawHangman(lives);
+            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает...' : 'Твой ход!';
+        });
+
+        socket.on('gameOver', ({ winner, word }) => {
+            if (winner === 'guesser') {
+                document.getElementById('status').textContent = isCreator ? '😭 Ты проиграл!' : '🎉 Ты выиграл!';
+            } else {
+                document.getElementById('status').textContent = isCreator ? '🎉 Ты выиграл!' : '😭 Ты проиграл!';
+                if (word) document.getElementById('word').textContent = word;
+            }
+            document.getElementById('newRound').style.display = 'block';
+        });
+
+        document.getElementById('newRound').onclick = () => {
+            socket.emit('newRound', roomCode);
+        };
+
+        socket.on('waitingForWord', () => {
+            document.getElementById('inputWordSection').style.display = isCreator ? 'block' : 'none';
+            document.getElementById('waitingWord').style.display = isCreator ? 'none' : 'block';
+            document.getElementById('waitingWord').textContent = isCreator ? '' : 'Ожидаем новое слово...';
+            document.getElementById('newRound').style.display = 'none';
+            document.getElementById('word').textContent = '';
+            document.getElementById('lives').textContent = '❤️❤️❤️❤️❤️❤️';
+            document.getElementById('keyboard').innerHTML = '';
+            drawHangman(6);
+        });
+
+        socket.on('error', (msg) => {
+            error.textContent = msg;
+        });
+
+        function createKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            keyboard.innerHTML = '';
+            'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('').forEach(letter => {
+                const btn = document.createElement('button');
+                btn.classList.add('key');
+                btn.textContent = letter;
+                btn.onclick = () => {
+                    btn.disabled = true;
+                    socket.emit('guessLetter', { code: roomCode, letter });
+                };
+                keyboard.appendChild(btn);
+            });
         }
 
-        const words = [
-            {word: 'КОТ', cat: 'Животное'}, {word: 'СОБАКА', cat: 'Животное'}, {word: 'ПТИЦА', cat: 'Животное'}, {word: 'РЫБА', cat: 'Животное'},
-            {word: 'МАШИНА', cat: 'Транспорт'}, {word: 'САМОЛЁТ', cat: 'Транспорт'}, {word: 'ПОЕЗД', cat: 'Транспорт'}, {word: 'КОРАБЛЬ', cat: 'Транспорт'},
-            {word: 'ДОМ', cat: 'Здание'}, {word: 'ШКОЛА', cat: 'Здание'}, {word: 'ГОРА', cat: 'Природа'}, {word: 'РЕКА', cat: 'Природа'},
-            {word: 'СОЛНЦЕ', cat: 'Природа'}, {word: 'ЛУНА', cat: 'Природа'}, {word: 'ЗВЕЗДА', cat: 'Природа'}, {word: 'ДЕРЕВО', cat: 'Природа'},
-            {word: 'КНИГА', cat: 'Предмет'}, {word: 'ТЕЛЕФОН', cat: 'Предмет'}, {word: 'ЛЮБОВЬ', cat: 'Эмоция'}, {word: 'ДРУГ', cat: 'Человек'},
-            {word: 'ИНТЕРНЕТ', cat: 'Технологии'}, {word: 'ИГРА', cat: 'Развлечение'}, {word: 'БОТ', cat: 'Технологии'}, {word: 'МОРЕ', cat: 'Природа'}
-        ];
-
-        const canvas = document.getElementById('hangman');
-        const ctx = canvas.getContext('2d');
-        const wordDiv = document.getElementById('word');
-        const livesDiv = document.getElementById('lives');
-        const statusDiv = document.getElementById('status');
-        const keyboardDiv = document.getElementById('keyboard');
-        const categoryDiv = document.getElementById('category');
-        const scoresDiv = document.getElementById('scores');
-        const newGameBtn = document.getElementById('newGame');
-
-        let currentWordObj = null;
-        let guessedLetters = new Set();
-        let lives = 6;
-        let scores = JSON.parse(localStorage.getItem('hangman_mobile')) || { wins: 0, losses: 0, bestStreak: 0 };
-        let currentStreak = 0;
-
-        const russianLetters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
-
-        function updateScores() {
-            scoresDiv.textContent = `🏆 Победы: ${scores.wins} | 💔 Поражения: ${scores.losses} | 🔥 Серия: ${currentStreak} (рекорд: ${scores.bestStreak})`;
-            localStorage.setItem('hangman_mobile', JSON.stringify(scores));
-        }
-
-        function drawHangman() {
+        function drawHangman(livesLeft) {
+            const canvas = document.getElementById('hangman');
+            const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, 200, 200);
             ctx.strokeStyle = 'var(--tg-theme-text-color, #000)';
             ctx.lineWidth = 7;
@@ -177,83 +189,13 @@
             ctx.moveTo(60, 160); ctx.lineTo(60, 20); ctx.lineTo(140, 20); ctx.lineTo(140, 50);
             ctx.stroke();
 
-            if (lives < 6) { ctx.beginPath(); ctx.arc(140, 70, 18, 0, Math.PI*2); ctx.stroke(); }
-            if (lives < 5) { ctx.beginPath(); ctx.moveTo(140, 88); ctx.lineTo(140, 130); ctx.stroke(); }
-            if (lives < 4) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(110, 115); ctx.stroke(); }
-            if (lives < 3) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(170, 115); ctx.stroke(); }
-            if (lives < 2) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(120, 160); ctx.stroke(); }
-            if (lives < 1) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(160, 160); ctx.stroke(); }
+            if (livesLeft < 6) { ctx.beginPath(); ctx.arc(140, 70, 18, 0, Math.PI*2); ctx.stroke(); }
+            if (livesLeft < 5) { ctx.beginPath(); ctx.moveTo(140, 88); ctx.lineTo(140, 130); ctx.stroke(); }
+            if (livesLeft < 4) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(110, 115); ctx.stroke(); }
+            if (livesLeft < 3) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(170, 115); ctx.stroke(); }
+            if (livesLeft < 2) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(120, 160); ctx.stroke(); }
+            if (livesLeft < 1) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(160, 160); ctx.stroke(); }
         }
-
-        function updateWordDisplay() {
-            wordDiv.textContent = currentWordObj.word.split('').map(l => guessedLetters.has(l) ? l : '_').join(' ');
-        }
-
-        function updateLives() {
-            livesDiv.textContent = '❤️'.repeat(lives) + '🖤'.repeat(6 - lives);
-        }
-
-        function createKeyboard() {
-            keyboardDiv.innerHTML = '';
-            russianLetters.forEach(letter => {
-                const btn = document.createElement('button');
-                btn.classList.add('key');
-                btn.textContent = letter;
-                btn.onclick = () => guessLetter(letter);
-                keyboardDiv.appendChild(btn);
-            });
-        }
-
-        function guessLetter(letter) {
-            if (guessedLetters.has(letter) || lives === 0 || currentWordObj.word.split('').every(l => guessedLetters.has(l))) return;
-
-            guessedLetters.add(letter);
-            const buttons = keyboardDiv.querySelectorAll('.key');
-            const idx = russianLetters.indexOf(letter);
-            buttons[idx].disabled = true;
-
-            if (currentWordObj.word.includes(letter)) {
-                buttons[idx].classList.add('correct');
-                updateWordDisplay();
-                if (currentWordObj.word.split('').every(l => guessedLetters.has(l))) {
-                    statusDiv.textContent = '🎉 Победа!';
-                    scores.wins++;
-                    currentStreak++;
-                    if (currentStreak > scores.bestStreak) scores.bestStreak = currentStreak;
-                    updateScores();
-                }
-            } else {
-                buttons[idx].classList.add('wrong');
-                lives--;
-                updateLives();
-                drawHangman();
-                if (lives === 0) {
-                    statusDiv.textContent = `😭 Проиграл! Слово: ${currentWordObj.word}`;
-                    scores.losses++;
-                    currentStreak = 0;
-                    updateScores();
-                } else {
-                    statusDiv.textContent = `❌ Неверно! Осталось ${lives}`;
-                }
-            }
-        }
-
-        function newGame() {
-            currentWordObj = words[Math.floor(Math.random() * words.length)];
-            categoryDiv.textContent = `Категория: ${currentWordObj.cat}`;
-            guessedLetters = new Set();
-            lives = 6;
-            statusDiv.textContent = 'Выбери букву 👇';
-            wordDiv.textContent = '_ '.repeat(currentWordObj.word.length).trim();
-            updateLives();
-            drawHangman();
-            createKeyboard();
-            updateScores();
-        }
-
-        newGameBtn.onclick = newGame;
-        updateScores();
-        newGame();
     </script>
 </body>
 </html>
