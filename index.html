@@ -8,12 +8,13 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         :root {
-            --bg: var(--tg-theme-bg-color, #ffffff);
-            --text: var(--tg-theme-text-color, #000000);
-            --btn: var(--tg-theme-button-color, #0088cc);
-            --btn-text: var(--tg-theme-button-text-color, #ffffff);
-            --secondary: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            --hint: var(--tg-theme-hint-color, #999);
+            --bg: var(--tg-theme-bg-color, #f8f9fa);
+            --text: var(--tg-theme-text-color, #212529);
+            --btn: #0d6efd;
+            --btn-text: white;
+            --success: #198754;
+            --danger: #dc3545;
+            --secondary: #e9ecef;
         }
         body {
             margin: 0;
@@ -27,21 +28,15 @@
             align-items: center;
             box-sizing: border-box;
             touch-action: manipulation;
-            overscroll-behavior: none;
         }
         h1 {
             font-size: 26px;
-            margin: 8px 0 12px;
-            text-align: center;
-            background: linear-gradient(90deg, var(--btn), #ff6b6b);
+            margin: 8px 0 16px;
+            background: linear-gradient(90deg, var(--btn), #6610f2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        #game, #menu {
-            width: 100%;
-            max-width: 480px;
-            text-align: center;
-        }
+        #menu, #game { width: 100%; max-width: 480px; }
         input, button {
             width: 100%;
             padding: 14px;
@@ -49,79 +44,79 @@
             border-radius: 16px;
             font-size: 18px;
             border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
-        button {
-            background: var(--btn);
-            color: var(--btn-text);
-            font-weight: 600;
-        }
-        button:active {
-            transform: scale(0.96);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
+        button { background: var(--btn); color: white; font-weight: 600; }
+        button:active { transform: scale(0.97); }
         #roomCodeDisplay, #categoryDisplay {
-            font-size: 17px;
-            margin: 12px 0;
-            padding: 8px 16px;
+            padding: 10px;
             background: var(--secondary);
             border-radius: 12px;
+            margin: 12px 0;
+            font-size: 17px;
         }
-        #categoryDisplay { color: var(--hint); font-weight: 500; }
+        #categoryDisplay { color: #6c757d; }
         #word {
-            font-size: 38px;
+            font-size: 40px;
             letter-spacing: 12px;
             margin: 20px 0;
             min-height: 60px;
             text-align: center;
             display: flex;
             justify-content: center;
+            gap: 8px;
             flex-wrap: wrap;
-            gap: 6px;
         }
         #word span {
             display: inline-block;
-            min-width: 28px;
-            transition: transform 0.4s, opacity 0.4s;
+            min-width: 30px;
+            transition: all 0.4s ease;
         }
         #word .reveal {
-            animation: letterReveal 0.6s ease-out;
+            animation: letterPop 0.6s ease-out;
         }
         #lives {
-            font-size: 30px;
+            font-size: 32px;
             margin: 12px 0;
             letter-spacing: 4px;
+        }
+        #timer {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 12px 0;
+            transition: color 0.4s, transform 0.4s;
+        }
+        #timer.low {
+            color: var(--danger);
+            animation: timerPulse 0.8s infinite;
         }
         #status {
             font-size: 20px;
             margin: 12px 0;
             font-weight: 600;
-            min-height: 30px;
+            min-height: 32px;
         }
         #keyboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
             gap: 10px;
             margin: 20px 0;
-            padding: 0 10px;
+            padding: 0 8px;
         }
         .key {
             aspect-ratio: 1;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             border-radius: 16px;
             background: var(--btn);
             color: white;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.15);
             transition: all 0.18s ease;
-            touch-action: manipulation;
             position: relative;
             overflow: hidden;
         }
         .key:active {
             transform: scale(0.92);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
         .key::after {
             content: '';
@@ -130,70 +125,71 @@
             left: 50%;
             width: 0;
             height: 0;
-            background: rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.35);
             border-radius: 50%;
             transform: translate(-50%, -50%);
-            transition: width 0.5s ease, height 0.5s ease;
-            pointer-events: none;
+            transition: width 0.6s ease, height 0.6s ease;
         }
         .key:active::after {
             width: 300px;
             height: 300px;
-            opacity: 0;
         }
         .key.correct {
-            background: #4CAF50 !important;
-            animation: keyCorrectPop 0.5s ease;
+            background: var(--success) !important;
+            animation: keyPop 0.5s ease;
         }
         .key.wrong {
-            background: #f44336 !important;
-            animation: keyWrongShake 0.4s ease;
+            background: var(--danger) !important;
+            animation: keyShake 0.4s ease;
         }
-        @keyframes keyCorrectPop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); box-shadow: 0 0 20px #4CAF50; }
-            100% { transform: scale(1); }
-        }
-        @keyframes keyWrongShake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-6px); }
-            40%, 80% { transform: translateX(6px); }
-        }
-        #hangman-container {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            margin: 15px 0;
-        }
-        #hangman {
+        #chatArea {
             width: 100%;
-            height: 100%;
-            transition: transform 0.4s ease;
+            max-height: 140px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 16px;
         }
-        #hangman.error {
-            animation: shakeHang 0.6s cubic-bezier(.36,.07,.19,.97) both;
+        #openChat { background: #28a745; margin: 12px 0; }
+        #chatPanel {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg);
+            padding: 16px;
+            border-top: 1px solid #dee2e6;
+            z-index: 1000;
         }
-        #hangman.danger {
-            animation: pulseDanger 1.8s infinite;
-        }
+        .emojiBtn { font-size: 26px; padding: 8px; background: none; border: none; cursor: pointer; }
+        #hangman { width: 220px; height: 220px; margin: 16px 0; transition: transform 0.4s; }
+        #hangman.shake { animation: shakeHang 0.6s; }
         @keyframes shakeHang {
-            0%, 100% { transform: translateX(0) rotate(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) rotate(-2deg); }
-            20%, 40%, 60%, 80% { transform: translateX(5px) rotate(2deg); }
+            0%,100% { transform: translateX(0); }
+            10%,30%,50%,70%,90% { transform: translateX(-6px) rotate(-2deg); }
+            20%,40%,60%,80% { transform: translateX(6px) rotate(2deg); }
         }
-        @keyframes pulseDanger {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.06); }
-        }
-        #newRound {
-            background: #ff9800;
-            margin-top: 20px;
-            font-size: 20px;
-        }
-        @keyframes letterReveal {
-            0% { transform: scale(0.6); opacity: 0; }
+        @keyframes letterPop {
+            0% { transform: scale(0.5); opacity: 0; }
             60% { transform: scale(1.3); }
             100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes keyPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+        @keyframes keyShake {
+            0%,100% { transform: translateX(0); }
+            20%,60% { transform: translateX(-5px); }
+            40%,80% { transform: translateX(5px); }
+        }
+        @keyframes timerPulse {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
     </style>
 </head>
@@ -205,7 +201,7 @@
         <p style="margin:12px 0;">или</p>
         <input id="codeInput" placeholder="Код комнаты">
         <button id="joinRoom">Присоединиться</button>
-        <p id="error" style="color:#f44336;"></p>
+        <p id="error" style="color:#dc3545;"></p>
     </div>
 
     <div id="game" style="display:none;">
@@ -218,27 +214,41 @@
             <button id="submitWord">Загадать</button>
         </div>
 
-        <div id="hangman-container">
-            <canvas id="hangman" width="220" height="220"></canvas>
-        </div>
+        <canvas id="hangman" width="220" height="220"></canvas>
         <div id="word"></div>
+        <div id="timer">120</div>
         <div id="lives">❤️❤️❤️❤️❤️❤️</div>
-        <div id="status"></div>
+        <div id="status">Твой ход!</div>
         <div id="keyboard"></div>
-        <button id="newRound" style="display:none;">🔄 Новая игра</button>
+
+        <div id="chatArea"></div>
+        <button id="openChat">💬 Чат</button>
+
+        <button id="newRound" style="display:none;">🔄 Поменяться</button>
+    </div>
+
+    <!-- Чат-панель -->
+    <div id="chatPanel" style="display:none; position:fixed; bottom:0; left:0; right:0; background:var(--bg); padding:16px; border-top:1px solid #dee2e6; z-index:1000;">
+        <input id="chatInput" placeholder="Сообщение..." maxlength="50">
+        <button id="sendMessage">Отправить</button>
+        <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:12px; justify-content:center;">
+            <button class="emojiBtn">😱</button><button class="emojiBtn">😂</button><button class="emojiBtn">🔥</button>
+            <button class="emojiBtn">🤡</button><button class="emojiBtn">😎</button><button class="emojiBtn">👍</button>
+            <button class="emojiBtn">👎</button><button class="emojiBtn">❤️</button><button class="emojiBtn">💀</button>
+        </div>
+        <button id="closeChat" style="margin-top:12px; background:#dc3545;">Закрыть</button>
     </div>
 
     <script>
         let WebApp = window.Telegram?.WebApp;
-        if (WebApp) {
-            WebApp.ready();
-            WebApp.expand();
-        }
+        if (WebApp) { WebApp.ready(); WebApp.expand(); }
 
         const socket = io('https://hangman-server.zeabur.app');
 
         let roomCode = null;
         let isCreator = false;
+        let timerInterval = null;
+        let timeLeft = 120;
 
         document.getElementById('createRoom').onclick = () => socket.emit('createRoom');
         document.getElementById('joinRoom').onclick = () => {
@@ -251,7 +261,7 @@
             isCreator = true;
             document.getElementById('menu').style.display = 'none';
             document.getElementById('game').style.display = 'block';
-            document.getElementById('roomCodeDisplay').textContent = `Код: ${code} (поделись с другом)`;
+            document.getElementById('roomCodeDisplay').textContent = `Код: ${code} (поделись)`;
             document.getElementById('inputWordSection').style.display = 'block';
         });
 
@@ -279,6 +289,7 @@
             document.getElementById('status').textContent = isCreator ? 'Соперник угадывает...' : 'Твой ход!';
             createKeyboard();
             drawHangman(6);
+            startTimer();
         });
 
         socket.on('updateGame', ({ revealed, lives }) => {
@@ -294,13 +305,11 @@
         });
 
         socket.on('gameOver', ({ winner, word }) => {
+            clearInterval(timerInterval);
             document.getElementById('status').textContent = winner === 'guesser' 
                 ? (isCreator ? '😭 Проиграл!' : '🎉 Победа!') 
                 : (isCreator ? '🎉 Победа!' : '😭 Проиграл!');
-            if (word) {
-                document.getElementById('word').textContent = word;
-                document.getElementById('word').classList.add('win');
-            }
+            if (word) document.getElementById('word').textContent = word;
             document.getElementById('newRound').style.display = 'block';
         });
 
@@ -310,7 +319,7 @@
         };
 
         socket.on('rolesSwapped', ({ newCreator }) => {
-            isCreator = newCreator === socket.id;
+            isCreator = (newCreator === socket.id);
             document.getElementById('status').textContent = isCreator ? 'Загадывай слово!' : 'Ожидаем слово...';
             document.getElementById('inputWordSection').style.display = isCreator ? 'block' : 'none';
             document.getElementById('waitingWord').style.display = isCreator ? 'none' : 'block';
@@ -323,7 +332,22 @@
             document.getElementById('word').innerHTML = '';
             document.getElementById('keyboard').innerHTML = '';
             drawHangman(6);
+            timeLeft = 120;
+            document.getElementById('timer').textContent = '120';
         });
+
+        // Таймер 2 минуты
+        function startTimer() {
+            timeLeft = 120;
+            document.getElementById('timer').textContent = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
 
         function createKeyboard() {
             const keyboard = document.getElementById('keyboard');
@@ -343,62 +367,22 @@
         function drawHangman(livesLeft) {
             const canvas = document.getElementById('hangman');
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+            ctx.clearRect(0, 0, 200, 200);
             ctx.strokeStyle = 'var(--text)';
-            ctx.lineWidth = 8;
+            ctx.lineWidth = 7;
             ctx.lineCap = 'round';
 
-            // Виселица
             ctx.beginPath();
-            ctx.moveTo(30, 190); ctx.lineTo(190, 190);
-            ctx.moveTo(170, 190); ctx.lineTo(170, 40); ctx.lineTo(80, 40); ctx.lineTo(80, 70);
+            ctx.moveTo(20, 180); ctx.lineTo(180, 180); ctx.lineTo(160, 160); ctx.lineTo(40, 160); ctx.lineTo(20, 180);
+            ctx.moveTo(60, 160); ctx.lineTo(60, 20); ctx.lineTo(140, 20); ctx.lineTo(140, 50);
             ctx.stroke();
 
-            // Голова
-            if (livesLeft < 6) {
-                ctx.beginPath();
-                ctx.arc(80, 90, 20, 0, Math.PI*2);
-                ctx.stroke();
-            }
-            // Тело
-            if (livesLeft < 5) {
-                ctx.beginPath();
-                ctx.moveTo(80, 110); ctx.lineTo(80, 150);
-                ctx.stroke();
-            }
-            // Руки
-            if (livesLeft < 4) {
-                ctx.beginPath();
-                ctx.moveTo(80, 120); ctx.lineTo(50, 140);
-                ctx.stroke();
-            }
-            if (livesLeft < 3) {
-                ctx.beginPath();
-                ctx.moveTo(80, 120); ctx.lineTo(110, 140);
-                ctx.stroke();
-            }
-            // Ноги
-            if (livesLeft < 2) {
-                ctx.beginPath();
-                ctx.moveTo(80, 150); ctx.lineTo(60, 180);
-                ctx.stroke();
-            }
-            if (livesLeft < 1) {
-                ctx.beginPath();
-                ctx.moveTo(80, 150); ctx.lineTo(100, 180);
-                ctx.stroke();
-            }
-
-            // Тряска при ошибке
-            const container = document.getElementById('hangman-container');
-            container.classList.remove('error');
-            void container.offsetWidth; // reflow
-            if (livesLeft < 6) container.classList.add('error');
-
-            // Пульсация опасности
-            container.classList.remove('danger');
-            if (livesLeft <= 2) container.classList.add('danger');
+            if (livesLeft < 6) { ctx.beginPath(); ctx.arc(140, 70, 18, 0, Math.PI*2); ctx.stroke(); }
+            if (livesLeft < 5) { ctx.beginPath(); ctx.moveTo(140, 88); ctx.lineTo(140, 130); ctx.stroke(); }
+            if (livesLeft < 4) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(110, 115); ctx.stroke(); }
+            if (livesLeft < 3) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(170, 115); ctx.stroke(); }
+            if (livesLeft < 2) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(120, 160); ctx.stroke(); }
+            if (livesLeft < 1) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(160, 160); ctx.stroke(); }
         }
     </script>
 </body>
