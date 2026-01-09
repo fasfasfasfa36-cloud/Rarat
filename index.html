@@ -3,51 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Виселица: 1 vs 1 🎯</title>
+    <title>Виселица 1 vs 1 MAX</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { margin: 0; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; touch-action: manipulation; }
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
         h1 { font-size: 28px; margin: 5px 0; text-align: center; background: linear-gradient(90deg, #0088cc, #ff4d4d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         #menu, #game { width: 100%; max-width: 500px; text-align: center; }
-        input, button { width: 90%; padding: 14px; margin: 10px 0; border-radius: 14px; font-size: 18px; border: none; }
+        input, button { width: 90%; padding: 14px; margin: 8px 0; border-radius: 14px; font-size: 18px; border: none; }
         input { background: var(--tg-theme-secondary-bg-color, #f0f0f0); color: var(--tg-theme-text-color); }
-        button { background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #ffffff); font-weight: bold; }
+        button { background: var(--tg-theme-button-color, #0088cc); color: white; font-weight: bold; }
         button:active { opacity: 0.8; }
-        #roomCodeDisplay { font-size: 20px; font-weight: bold; margin: 15px 0; }
-        #timer { font-size: 24px; font-weight: bold; color: #ff4d4d; margin: 10px 0; }
+        #roomCodeDisplay, #categoryDisplay { font-size: 18px; margin: 10px 0; }
+        #categoryDisplay { color: #666; }
+        #timer { font-size: 28px; font-weight: bold; margin: 10px 0; transition: color 0.3s; }
+        #timer.low { color: #ff0000; animation: pulseTimer 1s infinite; }
         #word { font-size: 36px; letter-spacing: 10px; margin: 15px 0; text-align: center; }
         #lives { font-size: 28px; margin: 10px 0; }
-        #status { font-size: 20px; margin: 10px 0; font-weight: bold; text-align: center; min-height: 28px; }
+        #status { font-size: 20px; margin: 10px 0; font-weight: bold; min-height: 28px; }
+        #scores { font-size: 18px; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 12px; }
         #keyboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(36px, 1fr)); gap: 8px; margin: 15px 0; width: 100%; max-width: 460px; }
-        .key { padding: 14px; font-size: 20px; border-radius: 14px; background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #ffffff); font-weight: bold; }
-        .key:disabled { opacity: 0.5; background: var(--tg-theme-hint-color, #999); }
+        .key { padding: 14px; font-size: 20px; border-radius: 14px; background: var(--tg-theme-button-color, #0088cc); color: white; font-weight: bold; }
+        .key:disabled { opacity: 0.5; background: #999; }
         .key.correct { background: #4CAF50 !important; animation: pulse 0.5s; }
         .key.wrong { background: #f44336 !important; animation: shake 0.5s; }
-        #hangman { width: 200px; height: 200px; margin: 10px 0; }
-        #error { color: red; margin: 10px 0; }
+        #hangman { width: 200px; height: 200px; margin: 10px 0; transition: transform 0.3s; }
+        #hangman.wrong { animation: shakeHangman 0.5s; }
+        #chatArea { width:100%; max-height:140px; overflow-y:auto; background:rgba(0,0,0,0.05); border-radius:12px; padding:10px; margin:10px 0; font-size:16px; }
+        #openChat { background:#4CAF50; margin-top:10px; }
+        #chatPanel { display:none; position:fixed; bottom:0; left:0; right:0; background:var(--tg-theme-bg-color); padding:15px; border-top:1px solid #ccc; z-index:1000; }
+        .emojiBtn { font-size:24px; padding:8px; background:none; border:none; cursor:pointer; }
+        #error { color: red; margin:10px 0; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+        @keyframes shakeHangman { 0%,100% { transform: translateX(0); } 10%,30%,50%,70%,90% { transform: translateX(-5px); } 20%,40%,60%,80% { transform: translateX(5px); } }
+        @keyframes pulseTimer { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
-    <h1>Виселица: 1 vs 1 🎯</h1>
+    <h1>Виселица MAX 1 vs 1</h1>
 
     <div id="menu">
         <button id="createRoom">Создать комнату</button>
         <p style="margin:10px 0;">или</p>
-        <input id="codeInput" placeholder="Введи код комнаты (например ABCD)">
+        <input id="codeInput" placeholder="Введи код">
         <button id="joinRoom">Присоединиться</button>
         <p id="error"></p>
     </div>
 
     <div id="game" style="display:none;">
         <div id="roomCodeDisplay"></div>
-        <div id="waitingWord" style="font-size:18px; margin:20px 0;">Ожидаем, пока соперник загадает слово...</div>
+        <div id="categoryDisplay"></div>
+        <div id="scores">Очки: <span id="myScore">0</span> | Соперник: <span id="opponentScore">0</span></div>
+        <div id="waitingWord" style="font-size:18px; margin:20px 0;">Ожидаем...</div>
 
         <div id="inputWordSection" style="display:none;">
-            <input id="wordInput" placeholder="Введи слово (только русские буквы)">
-            <button id="submitWord">Загадать слово!</button>
+            <input id="wordInput" placeholder="Слово (русские буквы)">
+            <button id="submitWord">Загадать!</button>
         </div>
 
         <canvas id="hangman" width="200" height="200"></canvas>
@@ -56,8 +80,36 @@
         <div id="lives">❤️❤️❤️❤️❤️❤️</div>
         <div id="status">Твой ход!</div>
         <div id="keyboard"></div>
+
+        <div style="margin:15px 0;">
+            <button id="hintBtn">Подсказка (-20 очков)</button>
+            <button id="surrenderBtn">Сдаться (-80 очков)</button>
+        </div>
+
+        <div id="chatArea"></div>
+        <button id="openChat">💬 Чат / Эмодзи</button>
+
         <button id="newRound" style="display:none;">🔄 Поменяться ролями</button>
     </div>
+
+    <!-- Панель чата -->
+    <div id="chatPanel" style="display:none; position:fixed; bottom:0; left:0; right:0; background:var(--tg-theme-bg-color); padding:15px; border-top:1px solid #ccc; z-index:1000;">
+        <input id="chatInput" placeholder="Сообщение (до 30 символов)" maxlength="30">
+        <button id="sendMessage">Отправить</button>
+        
+        <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+            <button class="emojiBtn">😱</button><button class="emojiBtn">😂</button><button class="emojiBtn">🔥</button>
+            <button class="emojiBtn">🤡</button><button class="emojiBtn">😎</button><button class="emojiBtn">👍</button>
+            <button class="emojiBtn">👎</button><button class="emojiBtn">❤️</button><button class="emojiBtn">💀</button>
+            <button class="emojiBtn">🤔</button><button class="emojiBtn">😭</button><button class="emojiBtn">🎉</button>
+        </div>
+        <button id="closeChat" style="margin-top:10px; background:#f44336;">Закрыть</button>
+    </div>
+
+    <audio id="correctSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3"></audio>
+    <audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3"></audio>
+    <audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3"></audio>
+    <audio id="loseSound" src="https://assets.mixkit.co/sfx/preview/mixkit-losing-marimba-2025.mp3"></audio>
 
     <script>
         let WebApp = window.Telegram?.WebApp;
@@ -69,12 +121,19 @@
         const game = document.getElementById('game');
         const error = document.getElementById('error');
         const timerDiv = document.getElementById('timer');
+        const myScoreEl = document.getElementById('myScore');
+        const opponentScoreEl = document.getElementById('opponentScore');
+        const correctSound = document.getElementById('correctSound');
+        const wrongSound = document.getElementById('wrongSound');
+        const winSound = document.getElementById('winSound');
+        const loseSound = document.getElementById('loseSound');
+
         let roomCode = null;
         let isCreator = false;
         let timerInterval = null;
+        let myId = null;
 
         document.getElementById('createRoom').onclick = () => socket.emit('createRoom');
-
         document.getElementById('joinRoom').onclick = () => {
             const code = document.getElementById('codeInput').value.trim().toUpperCase();
             if (code) socket.emit('joinRoom', code);
@@ -84,27 +143,21 @@
         socket.on('roomCreated', (code) => {
             roomCode = code;
             isCreator = true;
+            myId = socket.id;
             menu.style.display = 'none';
             game.style.display = 'block';
-            document.getElementById('roomCodeDisplay').textContent = `Код комнаты: ${code}\nОтправь другу!`;
+            document.getElementById('roomCodeDisplay').textContent = `Код: ${code} (отправь другу!)`;
             document.getElementById('inputWordSection').style.display = 'block';
-            error.textContent = '';
-
-            if (WebApp) {
-                WebApp.MainButton.setText('Поделиться').show().onClick(() => {
-                    WebApp.shareUrl(`${window.location.origin}${window.location.pathname}?room=${code}`, `Играй в виселицу! Код: ${code}`);
-                });
-            }
         });
 
         socket.on('roomJoined', (code) => {
             roomCode = code;
             isCreator = false;
+            myId = socket.id;
             menu.style.display = 'none';
             game.style.display = 'block';
             document.getElementById('roomCodeDisplay').textContent = `Ты в комнате: ${code}`;
             document.getElementById('waitingWord').style.display = 'block';
-            error.textContent = '';
         });
 
         document.getElementById('submitWord').onclick = () => {
@@ -112,73 +165,87 @@
             if (word && /^[А-ЯЁ]+$/.test(word)) {
                 socket.emit('setWord', { code: roomCode, word });
                 document.getElementById('inputWordSection').style.display = 'none';
-                document.getElementById('waitingWord').style.display = 'none';
-                error.textContent = '';
-            } else {
-                error.textContent = 'Только русские буквы!';
             }
         };
 
-        socket.on('gameStarted', ({ wordLength }) => {
+        socket.on('gameStarted', ({ wordLength, category }) => {
             document.getElementById('waitingWord').style.display = 'none';
             document.getElementById('word').textContent = '_ '.repeat(wordLength).trim();
-            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает (60 сек)' : 'Твой ход! Угадай за 60 сек';
+            document.getElementById('categoryDisplay').textContent = `Категория: ${category}`;
+            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает (60 сек)' : 'Твой ход!';
             createKeyboard();
             drawHangman(6);
-            startTimer(); // Запуск таймера
+            startTimer();
         });
 
-        socket.on('updateGame', ({ revealed, lives, remainingTime }) => {
+        socket.on('updateGame', ({ revealed, lives, remainingTime, scores }) => {
             document.getElementById('word').textContent = revealed;
             document.getElementById('lives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(6 - lives);
             drawHangman(lives);
             timerDiv.textContent = remainingTime;
-            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает' : 'Твой ход!';
+            if (remainingTime <= 10) timerDiv.classList.add('low');
+
+            // Обновление очков
+            const myNewScore = scores[myId] || 0;
+            const oppId = Object.keys(scores).find(id => id !== myId);
+            const oppScore = scores[oppId] || 0;
+            myScoreEl.textContent = myNewScore;
+            opponentScoreEl.textContent = oppScore;
         });
 
-        socket.on('gameOver', ({ winner, word, reason }) => {
+        socket.on('gameOver', ({ winner, word, reason, scores }) => {
             clearInterval(timerInterval);
-            if (reason === 'time') {
-                document.getElementById('status').textContent = isCreator ? '🎉 Ты выиграл! Время вышло' : '😭 Проиграл! Время вышло';
-            } else if (winner === 'guesser') {
-                document.getElementById('status').textContent = isCreator ? '😭 Ты проиграл!' : '🎉 Ты выиграл!';
+            timerDiv.classList.remove('low');
+
+            let msg = '';
+            if (reason === 'time') msg = isCreator ? '🎉 Ты выиграл! Время вышло' : '😭 Проиграл! Время вышло';
+            else if (winner === 'guesser') msg = isCreator ? '😭 Ты проиграл!' : '🎉 Ты выиграл!';
+            else msg = isCreator ? '🎉 Ты выиграл!' : '😭 Ты проиграл!';
+            document.getElementById('status').textContent = msg;
+
+            if (word) document.getElementById('word').textContent = word;
+
+            // Звуки
+            if ((winner === 'guesser' && !isCreator) || (winner === 'creator' && isCreator)) {
+                winSound.play();
             } else {
-                document.getElementById('status').textContent = isCreator ? '🎉 Ты выиграл!' : '😭 Ты проиграл!';
-                if (word) document.getElementById('word').textContent = word;
+                loseSound.play();
             }
+
             document.getElementById('newRound').style.display = 'block';
         });
 
-        document.getElementById('newRound').onclick = () => {
-            socket.emit('newRound', roomCode);
-            document.getElementById('newRound').style.display = 'none';
+        document.getElementById('hintBtn').onclick = () => socket.emit('useHint', roomCode);
+        document.getElementById('surrenderBtn').onclick = () => socket.emit('surrender', roomCode);
+        document.getElementById('newRound').onclick = () => socket.emit('newRound', roomCode);
+
+        // Чат и эмодзи
+        document.getElementById('openChat').onclick = () => document.getElementById('chatPanel').style.display = 'block';
+        document.getElementById('closeChat').onclick = () => document.getElementById('chatPanel').style.display = 'none';
+
+        document.getElementById('sendMessage').onclick = () => {
+            const msg = document.getElementById('chatInput').value.trim();
+            if (msg) {
+                socket.emit('chatMessage', { code: roomCode, message: msg });
+                document.getElementById('chatInput').value = '';
+            }
         };
 
-        socket.on('rolesSwapped', () => {
-            isCreator = !isCreator; // Инвертируем роль
-            document.getElementById('status').textContent = isCreator ? 'Загадывай слово!' : 'Ожидаем слово...';
+        document.querySelectorAll('.emojiBtn').forEach(btn => {
+            btn.onclick = () => socket.emit('emojiReaction', { code: roomCode, emoji: btn.textContent });
         });
 
-        socket.on('waitingForWord', () => {
-            clearInterval(timerInterval);
-            timerDiv.textContent = '60';
-            document.getElementById('inputWordSection').style.display = isCreator ? 'block' : 'none';
-            document.getElementById('waitingWord').style.display = isCreator ? 'none' : 'block';
-            document.getElementById('newRound').style.display = 'none';
-            document.getElementById('word').textContent = '';
-            document.getElementById('lives').textContent = '❤️❤️❤️❤️❤️❤️';
-            document.getElementById('keyboard').innerHTML = '';
-            drawHangman(6);
+        socket.on('newChatMessage', ({ sender, message }) => {
+            document.getElementById('chatArea').innerHTML += `<div><b>${sender}:</b> ${message}</div>`;
         });
 
-        socket.on('error', (msg) => error.textContent = msg);
+        socket.on('newEmoji', ({ sender, emoji }) => {
+            document.getElementById('chatArea').innerHTML += `<div style="font-size:24px;"><b>${sender}:</b> ${emoji}</div>`;
+        });
 
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                // Таймер обновляется от сервера, но локально тикаем для плавности
-            }, 1000);
-        }
+        socket.on('hintUsed', (msg) => {
+            document.getElementById('status').textContent = msg;
+        });
 
         function createKeyboard() {
             const keyboard = document.getElementById('keyboard');
@@ -201,7 +268,6 @@
             ctx.clearRect(0, 0, 200, 200);
             ctx.strokeStyle = 'var(--tg-theme-text-color, #000)';
             ctx.lineWidth = 7;
-            ctx.lineCap = 'round';
 
             ctx.beginPath();
             ctx.moveTo(20, 180); ctx.lineTo(180, 180); ctx.lineTo(160, 160); ctx.lineTo(40, 160); ctx.lineTo(20, 180);
@@ -214,6 +280,18 @@
             if (livesLeft < 3) { ctx.beginPath(); ctx.moveTo(140, 98); ctx.lineTo(170, 115); ctx.stroke(); }
             if (livesLeft < 2) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(120, 160); ctx.stroke(); }
             if (livesLeft < 1) { ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(160, 160); ctx.stroke(); }
+        }
+
+        function startTimer() {
+            timerDiv.classList.remove('low');
+            let timeLeft = 60;
+            timerDiv.textContent = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDiv.textContent = timeLeft;
+                if (timeLeft <= 10) timerDiv.classList.add('low');
+                if (timeLeft <= 0) clearInterval(timerInterval);
+            }, 1000);
         }
     </script>
 </body>
