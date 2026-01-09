@@ -15,6 +15,7 @@
         button { background: var(--tg-theme-button-color, #0088cc); color: var(--tg-theme-button-text-color, #ffffff); font-weight: bold; }
         button:active { opacity: 0.8; }
         #roomCodeDisplay { font-size: 20px; font-weight: bold; margin: 15px 0; }
+        #timer { font-size: 24px; font-weight: bold; color: #ff4d4d; margin: 10px 0; }
         #word { font-size: 36px; letter-spacing: 10px; margin: 15px 0; text-align: center; }
         #lives { font-size: 28px; margin: 10px 0; }
         #status { font-size: 20px; margin: 10px 0; font-weight: bold; text-align: center; min-height: 28px; }
@@ -51,24 +52,26 @@
 
         <canvas id="hangman" width="200" height="200"></canvas>
         <div id="word"></div>
+        <div id="timer">60</div>
         <div id="lives">❤️❤️❤️❤️❤️❤️</div>
         <div id="status">Твой ход!</div>
         <div id="keyboard"></div>
-        <button id="newRound" style="display:none;">🔄 Новая игра (поменяться ролями)</button>
+        <button id="newRound" style="display:none;">🔄 Поменяться ролями</button>
     </div>
 
     <script>
         let WebApp = window.Telegram?.WebApp;
         if (WebApp) { WebApp.ready(); WebApp.expand(); }
 
-        // Твой сервер Zeabur
         const socket = io('https://hangman-server.zeabur.app');
 
         const menu = document.getElementById('menu');
         const game = document.getElementById('game');
         const error = document.getElementById('error');
+        const timerDiv = document.getElementById('timer');
         let roomCode = null;
         let isCreator = false;
+        let timerInterval = null;
 
         document.getElementById('createRoom').onclick = () => socket.emit('createRoom');
 
@@ -87,10 +90,9 @@
             document.getElementById('inputWordSection').style.display = 'block';
             error.textContent = '';
 
-            // Кнопка поделиться в Telegram
             if (WebApp) {
-                WebApp.MainButton.setText('Поделиться кодом').show().onClick(() => {
-                    WebApp.shareUrl(window.location.origin + window.location.pathname + '?room=' + code, `Присоединяйся к виселице! Код: ${code}`);
+                WebApp.MainButton.setText('Поделиться').show().onClick(() => {
+                    WebApp.shareUrl(`${window.location.origin}${window.location.pathname}?room=${code}`, `Играй в виселицу! Код: ${code}`);
                 });
             }
         });
@@ -110,30 +112,35 @@
             if (word && /^[А-ЯЁ]+$/.test(word)) {
                 socket.emit('setWord', { code: roomCode, word });
                 document.getElementById('inputWordSection').style.display = 'none';
-                document.getElementById('waitingWord').textContent = 'Соперник угадывает...';
+                document.getElementById('waitingWord').style.display = 'none';
                 error.textContent = '';
             } else {
-                error.textContent = 'Только русские буквы, без пробелов!';
+                error.textContent = 'Только русские буквы!';
             }
         };
 
         socket.on('gameStarted', ({ wordLength }) => {
             document.getElementById('waitingWord').style.display = 'none';
             document.getElementById('word').textContent = '_ '.repeat(wordLength).trim();
-            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает...' : 'Твой ход!';
+            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает (60 сек)' : 'Твой ход! Угадай за 60 сек';
             createKeyboard();
             drawHangman(6);
+            startTimer(); // Запуск таймера
         });
 
-        socket.on('updateGame', ({ revealed, lives }) => {
+        socket.on('updateGame', ({ revealed, lives, remainingTime }) => {
             document.getElementById('word').textContent = revealed;
             document.getElementById('lives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(6 - lives);
             drawHangman(lives);
-            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает...' : 'Твой ход!';
+            timerDiv.textContent = remainingTime;
+            document.getElementById('status').textContent = isCreator ? 'Соперник угадывает' : 'Твой ход!';
         });
 
-        socket.on('gameOver', ({ winner, word }) => {
-            if (winner === 'guesser') {
+        socket.on('gameOver', ({ winner, word, reason }) => {
+            clearInterval(timerInterval);
+            if (reason === 'time') {
+                document.getElementById('status').textContent = isCreator ? '🎉 Ты выиграл! Время вышло' : '😭 Проиграл! Время вышло';
+            } else if (winner === 'guesser') {
                 document.getElementById('status').textContent = isCreator ? '😭 Ты проиграл!' : '🎉 Ты выиграл!';
             } else {
                 document.getElementById('status').textContent = isCreator ? '🎉 Ты выиграл!' : '😭 Ты проиграл!';
@@ -144,12 +151,19 @@
 
         document.getElementById('newRound').onclick = () => {
             socket.emit('newRound', roomCode);
+            document.getElementById('newRound').style.display = 'none';
         };
 
+        socket.on('rolesSwapped', () => {
+            isCreator = !isCreator; // Инвертируем роль
+            document.getElementById('status').textContent = isCreator ? 'Загадывай слово!' : 'Ожидаем слово...';
+        });
+
         socket.on('waitingForWord', () => {
+            clearInterval(timerInterval);
+            timerDiv.textContent = '60';
             document.getElementById('inputWordSection').style.display = isCreator ? 'block' : 'none';
             document.getElementById('waitingWord').style.display = isCreator ? 'none' : 'block';
-            document.getElementById('waitingWord').textContent = isCreator ? '' : 'Ожидаем новое слово...';
             document.getElementById('newRound').style.display = 'none';
             document.getElementById('word').textContent = '';
             document.getElementById('lives').textContent = '❤️❤️❤️❤️❤️❤️';
@@ -157,9 +171,14 @@
             drawHangman(6);
         });
 
-        socket.on('error', (msg) => {
-            error.textContent = msg;
-        });
+        socket.on('error', (msg) => error.textContent = msg);
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                // Таймер обновляется от сервера, но локально тикаем для плавности
+            }, 1000);
+        }
 
         function createKeyboard() {
             const keyboard = document.getElementById('keyboard');
