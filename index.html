@@ -7,21 +7,12 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        :root {
-            --bg: var(--tg-theme-bg-color, #f8f9fa);
-            --text: var(--tg-theme-text-color, #212529);
-            --btn: #0d6efd;
-            --btn-text: white;
-            --success: #198754;
-            --danger: #dc3545;
-            --secondary: #e9ecef;
-        }
         body {
             margin: 0;
-            padding: 12px;
+            padding: 10px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -30,13 +21,13 @@
             touch-action: manipulation;
         }
         h1 {
-            font-size: 26px;
-            margin: 8px 0 16px;
-            background: linear-gradient(90deg, var(--btn), #6610f2);
+            font-size: 28px;
+            margin: 8px 0;
+            background: linear-gradient(90deg, #0088cc, #ff4d4d);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        #menu, #game { width: 100%; max-width: 480px; }
+        #menu, #game { width: 100%; max-width: 480px; text-align: center; }
         input, button {
             width: 100%;
             padding: 14px;
@@ -44,153 +35,43 @@
             border-radius: 16px;
             font-size: 18px;
             border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
-        button { background: var(--btn); color: white; font-weight: 600; }
-        button:active { transform: scale(0.97); }
-        #roomCodeDisplay, #categoryDisplay {
-            padding: 10px;
-            background: var(--secondary);
-            border-radius: 12px;
-            margin: 12px 0;
-            font-size: 17px;
-        }
-        #categoryDisplay { color: #6c757d; }
-        #word {
-            font-size: 40px;
-            letter-spacing: 12px;
-            margin: 20px 0;
-            min-height: 60px;
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        #word span {
-            display: inline-block;
-            min-width: 30px;
-            transition: all 0.4s ease;
-        }
-        #word .reveal {
-            animation: letterPop 0.6s ease-out;
-        }
-        #lives {
-            font-size: 32px;
-            margin: 12px 0;
-            letter-spacing: 4px;
-        }
-        #timer {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 12px 0;
-            transition: color 0.4s, transform 0.4s;
-        }
-        #timer.low {
-            color: var(--danger);
-            animation: timerPulse 0.8s infinite;
-        }
-        #status {
-            font-size: 20px;
-            margin: 12px 0;
-            font-weight: 600;
-            min-height: 32px;
-        }
-        #keyboard {
+        input { background: var(--tg-theme-secondary-bg-color, #f0f0f0); color: var(--text); }
+        button { background: #0088cc; color: white; font-weight: bold; }
+        button:active { opacity: 0.85; }
+        #roomCodeDisplay, #categoryDisplay { font-size: 18px; margin: 12px 0; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 12px; }
+        #categoryDisplay { color: #666; }
+        #word { font-size: 36px; letter-spacing: 12px; margin: 20px 0; min-height: 60px; text-align: center; }
+        #lives { font-size: 30px; margin: 12px 0; letter-spacing: 4px; }
+        #status { font-size: 20px; margin: 12px 0; font-weight: bold; min-height: 30px; }
+        #keyboard { 
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
             gap: 10px;
             margin: 20px 0;
             padding: 0 8px;
         }
         .key {
             aspect-ratio: 1;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 22px;
             border-radius: 16px;
-            background: var(--btn);
+            background: #0088cc;
             color: white;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.15);
-            transition: all 0.18s ease;
-            position: relative;
-            overflow: hidden;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.2s;
         }
-        .key:active {
-            transform: scale(0.92);
+        .key:disabled {
+            background: #6c757d !important;  /* Серая кнопка после нажатия */
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
         }
-        .key::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255,255,255,0.35);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s ease, height 0.6s ease;
-        }
-        .key:active::after {
-            width: 300px;
-            height: 300px;
-        }
-        .key.correct {
-            background: var(--success) !important;
-            animation: keyPop 0.5s ease;
-        }
-        .key.wrong {
-            background: var(--danger) !important;
-            animation: keyShake 0.4s ease;
-        }
-        #chatArea {
-            width: 100%;
-            max-height: 140px;
-            overflow-y: auto;
-            background: rgba(0,0,0,0.05);
-            border-radius: 12px;
-            padding: 12px;
-            margin: 12px 0;
-            font-size: 16px;
-        }
-        #openChat { background: #28a745; margin: 12px 0; }
-        #chatPanel {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg);
-            padding: 16px;
-            border-top: 1px solid #dee2e6;
-            z-index: 1000;
-        }
-        .emojiBtn { font-size: 26px; padding: 8px; background: none; border: none; cursor: pointer; }
-        #hangman { width: 220px; height: 220px; margin: 16px 0; transition: transform 0.4s; }
-        #hangman.shake { animation: shakeHang 0.6s; }
-        @keyframes shakeHang {
-            0%,100% { transform: translateX(0); }
-            10%,30%,50%,70%,90% { transform: translateX(-6px) rotate(-2deg); }
-            20%,40%,60%,80% { transform: translateX(6px) rotate(2deg); }
-        }
-        @keyframes letterPop {
-            0% { transform: scale(0.5); opacity: 0; }
-            60% { transform: scale(1.3); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes keyPop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.25); }
-            100% { transform: scale(1); }
-        }
-        @keyframes keyShake {
-            0%,100% { transform: translateX(0); }
-            20%,60% { transform: translateX(-5px); }
-            40%,80% { transform: translateX(5px); }
-        }
-        @keyframes timerPulse {
-            0%,100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-        }
+        .key.correct { background: #198754 !important; }
+        .key.wrong { background: #dc3545 !important; }
+        #hangman { width: 200px; height: 200px; margin: 15px 0; }
+        #newRound { background: #ff9800; margin-top: 20px; font-size: 20px; }
+        #error { color: #dc3545; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -201,7 +82,7 @@
         <p style="margin:12px 0;">или</p>
         <input id="codeInput" placeholder="Код комнаты">
         <button id="joinRoom">Присоединиться</button>
-        <p id="error" style="color:#dc3545;"></p>
+        <p id="error"></p>
     </div>
 
     <div id="game" style="display:none;">
@@ -214,29 +95,12 @@
             <button id="submitWord">Загадать</button>
         </div>
 
-        <canvas id="hangman" width="220" height="220"></canvas>
+        <canvas id="hangman" width="200" height="200"></canvas>
         <div id="word"></div>
-        <div id="timer">120</div>
         <div id="lives">❤️❤️❤️❤️❤️❤️</div>
         <div id="status">Твой ход!</div>
         <div id="keyboard"></div>
-
-        <div id="chatArea"></div>
-        <button id="openChat">💬 Чат</button>
-
-        <button id="newRound" style="display:none;">🔄 Поменяться</button>
-    </div>
-
-    <!-- Чат-панель -->
-    <div id="chatPanel" style="display:none; position:fixed; bottom:0; left:0; right:0; background:var(--bg); padding:16px; border-top:1px solid #dee2e6; z-index:1000;">
-        <input id="chatInput" placeholder="Сообщение..." maxlength="50">
-        <button id="sendMessage">Отправить</button>
-        <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:12px; justify-content:center;">
-            <button class="emojiBtn">😱</button><button class="emojiBtn">😂</button><button class="emojiBtn">🔥</button>
-            <button class="emojiBtn">🤡</button><button class="emojiBtn">😎</button><button class="emojiBtn">👍</button>
-            <button class="emojiBtn">👎</button><button class="emojiBtn">❤️</button><button class="emojiBtn">💀</button>
-        </div>
-        <button id="closeChat" style="margin-top:12px; background:#dc3545;">Закрыть</button>
+        <button id="newRound" style="display:none;">🔄 Поменяться ролями</button>
     </div>
 
     <script>
@@ -247,30 +111,30 @@
 
         let roomCode = null;
         let isCreator = false;
-        let timerInterval = null;
-        let timeLeft = 120;
 
         document.getElementById('createRoom').onclick = () => socket.emit('createRoom');
+
         document.getElementById('joinRoom').onclick = () => {
             const code = document.getElementById('codeInput').value.trim().toUpperCase();
             if (code) socket.emit('joinRoom', code);
+            else document.getElementById('error').textContent = 'Введи код!';
         };
 
-        socket.on('roomCreated', code => {
+        socket.on('roomCreated', (code) => {
             roomCode = code;
             isCreator = true;
             document.getElementById('menu').style.display = 'none';
             document.getElementById('game').style.display = 'block';
-            document.getElementById('roomCodeDisplay').textContent = `Код: ${code} (поделись)`;
+            document.getElementById('roomCodeDisplay').textContent = `Код комнаты: ${code}\nОтправь другу!`;
             document.getElementById('inputWordSection').style.display = 'block';
         });
 
-        socket.on('roomJoined', code => {
+        socket.on('roomJoined', (code) => {
             roomCode = code;
             isCreator = false;
             document.getElementById('menu').style.display = 'none';
             document.getElementById('game').style.display = 'block';
-            document.getElementById('roomCodeDisplay').textContent = `Комната: ${code}`;
+            document.getElementById('roomCodeDisplay').textContent = `Ты в комнате: ${code}`;
             document.getElementById('waitingWord').style.display = 'block';
         });
 
@@ -284,31 +148,25 @@
 
         socket.on('gameStarted', ({ wordLength, category }) => {
             document.getElementById('waitingWord').style.display = 'none';
-            document.getElementById('word').innerHTML = '_ '.repeat(wordLength).trim().split(' ').map(c => `<span>${c}</span>`).join('');
+            document.getElementById('word').textContent = '_ '.repeat(wordLength).trim();
             document.getElementById('categoryDisplay').textContent = `Категория: ${category}`;
             document.getElementById('status').textContent = isCreator ? 'Соперник угадывает...' : 'Твой ход!';
             createKeyboard();
             drawHangman(6);
-            startTimer();
         });
 
         socket.on('updateGame', ({ revealed, lives }) => {
-            const spans = document.querySelectorAll('#word span');
-            revealed.split(' ').forEach((char, i) => {
-                if (spans[i].textContent !== char && char !== '_') {
-                    spans[i].textContent = char;
-                    spans[i].classList.add('reveal');
-                }
-            });
+            document.getElementById('word').textContent = revealed;
             document.getElementById('lives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(6 - lives);
             drawHangman(lives);
         });
 
         socket.on('gameOver', ({ winner, word }) => {
-            clearInterval(timerInterval);
-            document.getElementById('status').textContent = winner === 'guesser' 
-                ? (isCreator ? '😭 Проиграл!' : '🎉 Победа!') 
-                : (isCreator ? '🎉 Победа!' : '😭 Проиграл!');
+            if (winner === 'guesser') {
+                document.getElementById('status').textContent = isCreator ? '😭 Ты проиграл!' : '🎉 Ты выиграл!';
+            } else {
+                document.getElementById('status').textContent = isCreator ? '🎉 Ты выиграл!' : '😭 Ты проиграл!';
+            }
             if (word) document.getElementById('word').textContent = word;
             document.getElementById('newRound').style.display = 'block';
         });
@@ -329,25 +187,12 @@
             document.getElementById('inputWordSection').style.display = isCreator ? 'block' : 'none';
             document.getElementById('waitingWord').style.display = isCreator ? 'none' : 'block';
             document.getElementById('newRound').style.display = 'none';
-            document.getElementById('word').innerHTML = '';
+            document.getElementById('word').textContent = '';
             document.getElementById('keyboard').innerHTML = '';
             drawHangman(6);
-            timeLeft = 120;
-            document.getElementById('timer').textContent = '120';
         });
 
-        // Таймер 2 минуты
-        function startTimer() {
-            timeLeft = 120;
-            document.getElementById('timer').textContent = timeLeft;
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer').textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                }
-            }, 1000);
-        }
+        socket.on('error', (msg) => document.getElementById('error').textContent = msg);
 
         function createKeyboard() {
             const keyboard = document.getElementById('keyboard');
@@ -357,7 +202,7 @@
                 btn.classList.add('key');
                 btn.textContent = letter;
                 btn.onclick = () => {
-                    btn.disabled = true;
+                    btn.disabled = true;  // Кнопка становится серой и недоступной
                     socket.emit('guessLetter', { code: roomCode, letter });
                 };
                 keyboard.appendChild(btn);
@@ -368,7 +213,7 @@
             const canvas = document.getElementById('hangman');
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, 200, 200);
-            ctx.strokeStyle = 'var(--text)';
+            ctx.strokeStyle = 'var(--tg-theme-text-color, #000)';
             ctx.lineWidth = 7;
             ctx.lineCap = 'round';
 
