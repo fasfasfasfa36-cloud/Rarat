@@ -43,6 +43,7 @@
         #categoryDisplay { color: #666; }
         #word { font-size: 36px; letter-spacing: 12px; margin: 20px 0; min-height: 60px; text-align: center; }
         #lives { font-size: 30px; margin: 12px 0; letter-spacing: 4px; }
+        #timer { font-size: 32px; font-weight: bold; margin: 12px 0; color: #ff4d4d; }
         #status { font-size: 20px; margin: 12px 0; font-weight: bold; min-height: 30px; }
         #keyboard { 
             display: grid;
@@ -59,31 +60,18 @@
             color: white;
             font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: all 0.2s ease;
-            touch-action: manipulation;
-            cursor: pointer;
+            transition: all 0.2s;
         }
-        .key:active {
-            transform: scale(0.92);
-        }
-        .key:disabled,
-        .key[disabled] {
-            background: #6c757d !important; /* тёмно-серый */
-            color: #adb5bd !important;      /* светло-серый текст */
+        .key:disabled {
+            background: #6c757d !important;
+            color: #adb5bd !important;
             opacity: 0.7;
             cursor: not-allowed;
-            pointer-events: none !important; /* полностью блокируем клики */
+            pointer-events: none;
             box-shadow: none;
-            transform: none;
         }
-        .key.correct {
-            background: #198754 !important;
-            color: white;
-        }
-        .key.wrong {
-            background: #dc3545 !important;
-            color: white;
-        }
+        .key.correct { background: #198754 !important; }
+        .key.wrong { background: #dc3545 !important; }
         #hangman { width: 200px; height: 200px; margin: 15px 0; }
         #newRound { background: #ff9800; margin-top: 20px; font-size: 20px; }
         #error { color: #dc3545; margin: 10px 0; }
@@ -112,6 +100,7 @@
 
         <canvas id="hangman" width="200" height="200"></canvas>
         <div id="word"></div>
+        <div id="timer">120</div>
         <div id="lives">❤️❤️❤️❤️❤️❤️</div>
         <div id="status">Твой ход!</div>
         <div id="keyboard"></div>
@@ -126,6 +115,7 @@
 
         let roomCode = null;
         let isCreator = false;
+        let timerInterval = null;
 
         document.getElementById('createRoom').onclick = () => socket.emit('createRoom');
 
@@ -142,6 +132,7 @@
             document.getElementById('game').style.display = 'block';
             document.getElementById('roomCodeDisplay').textContent = `Код комнаты: ${code}\nОтправь другу!`;
             document.getElementById('inputWordSection').style.display = 'block';
+            resetGameUI();
         });
 
         socket.on('roomJoined', (code) => {
@@ -151,7 +142,19 @@
             document.getElementById('game').style.display = 'block';
             document.getElementById('roomCodeDisplay').textContent = `Ты в комнате: ${code}`;
             document.getElementById('waitingWord').style.display = 'block';
+            resetGameUI();
         });
+
+        function resetGameUI() {
+            document.getElementById('word').textContent = '';
+            document.getElementById('lives').textContent = '❤️❤️❤️❤️❤️❤️';
+            document.getElementById('timer').textContent = '120';
+            document.getElementById('status').textContent = isCreator ? 'Загадывай слово!' : 'Ожидаем слово...';
+            document.getElementById('keyboard').innerHTML = '';
+            const ctx = document.getElementById('hangman').getContext('2d');
+            ctx.clearRect(0, 0, 200, 200);
+            clearInterval(timerInterval);
+        }
 
         document.getElementById('submitWord').onclick = () => {
             const word = document.getElementById('wordInput').value.trim().toUpperCase();
@@ -168,7 +171,19 @@
             document.getElementById('status').textContent = isCreator ? 'Соперник угадывает...' : 'Твой ход!';
             createKeyboard();
             drawHangman(6);
+            startTimer();
         });
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            let timeLeft = 120;
+            document.getElementById('timer').textContent = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) clearInterval(timerInterval);
+            }, 1000);
+        }
 
         socket.on('updateGame', ({ revealed, lives }) => {
             document.getElementById('word').textContent = revealed;
@@ -177,11 +192,10 @@
         });
 
         socket.on('gameOver', ({ winner, word }) => {
-            if (winner === 'guesser') {
-                document.getElementById('status').textContent = isCreator ? '😭 Ты проиграл!' : '🎉 Ты выиграл!';
-            } else {
-                document.getElementById('status').textContent = isCreator ? '🎉 Ты выиграл!' : '😭 Ты проиграл!';
-            }
+            clearInterval(timerInterval);
+            document.getElementById('status').textContent = winner === 'guesser' 
+                ? (isCreator ? '😭 Ты проиграл!' : '🎉 Ты выиграл!') 
+                : (isCreator ? '🎉 Ты выиграл!' : '😭 Ты проиграл!');
             if (word) document.getElementById('word').textContent = word;
             document.getElementById('newRound').style.display = 'block';
         });
@@ -193,18 +207,11 @@
 
         socket.on('rolesSwapped', ({ newCreator }) => {
             isCreator = (newCreator === socket.id);
-            document.getElementById('status').textContent = isCreator ? 'Загадывай слово!' : 'Ожидаем слово...';
-            document.getElementById('inputWordSection').style.display = isCreator ? 'block' : 'none';
-            document.getElementById('waitingWord').style.display = isCreator ? 'none' : 'block';
+            resetGameUI();
         });
 
         socket.on('waitingForWord', () => {
-            document.getElementById('inputWordSection').style.display = isCreator ? 'block' : 'none';
-            document.getElementById('waitingWord').style.display = isCreator ? 'none' : 'block';
-            document.getElementById('newRound').style.display = 'none';
-            document.getElementById('word').textContent = '';
-            document.getElementById('keyboard').innerHTML = '';
-            drawHangman(6);
+            resetGameUI();
         });
 
         socket.on('error', (msg) => document.getElementById('error').textContent = msg);
@@ -217,7 +224,7 @@
                 btn.classList.add('key');
                 btn.textContent = letter;
                 btn.onclick = () => {
-                    btn.disabled = true; // Делаем кнопку серой и недоступной
+                    btn.disabled = true;
                     socket.emit('guessLetter', { code: roomCode, letter });
                 };
                 keyboard.appendChild(btn);
